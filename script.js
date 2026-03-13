@@ -251,7 +251,19 @@ canvas.style.width = window.innerWidth + 'px';
 canvas.style.height = window.innerHeight + 'px';
 
 const canvasBBox = canvas.getBoundingClientRect();
-
+export const dispatchPointerEvent = (target, type, options = {}) => {
+  target = target ?? document;
+  // type = pointerEventSet.has(type) ? type : 'pointermove';
+  
+  options = Object.assign({
+    view: window,
+    bubbles: true,
+    cancelable: true
+  }, (options ?? {}));
+  
+  const ev = new PointerEvent(type, options);
+  target.dispatchEvent(ev);
+};
 Object.assign(viewBox.baseVal, {
   x: -(5),
   y: -(10),
@@ -282,6 +294,17 @@ canvas.addEventListener('click', (e = new PointerEvent('pointerdown')) => {
   if (!State.isSelecting) {
     handleTileClick(e);
   }
+  
+  State.isSelecting = false;
+});
+
+canvas.addEventListener('pointerdown', (e = new PointerEvent('pointerdown')) => {
+  selectionBox.insertAt({ x: +e.target.dataset.x, y: +e.target.dataset.y });
+  dispatchPointerEvent(selectionBox.dom, 'pointerdown', { clientX: e.clientX, clientY: e.clientY })
+  
+  // if (!State.isSelecting) {
+  //   handleTileClick(e);
+  // }
   
   State.isSelecting = false;
 });

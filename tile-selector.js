@@ -1,36 +1,10 @@
 import { EventEmitter } from 'https://hamilsauce.github.io/hamhelper/event-emitter.js';
 import { attachTileSelectorStyle } from './attach-style.js';
 
-import ham from 'https://hamilsauce.github.io/hamhelper/hamhelper1.0.0.js';
-const { template, utils, sleep } = ham;
-
-// const app = document.querySelector('#app');
-// const svg = document.querySelector('#svg');
-// const scene = document.querySelector('#scene');
-// const tileContainer = document.querySelector('#tile-container');
-// const appBody = document.querySelector('#app-body')
-// const containers = document.querySelectorAll('.container')
-
-// const selector = document.querySelector('.tile-selector');
-// const selectBox = document.querySelector('.selection-box');
-// const handleA = document.querySelector('#a-handle');
-// const handleB = document.querySelector('#b-handle');
-
 const SELECTOR_TEMPLATE = `
   <rect class="selection-box" stroke-width="0.1" _stroke="green" width="1" height="1" x="2" y="2" transform="translate(-0.5,-0.5)"></rect>
   <circle class="selection-handle" data-handle="a" id="a-handle" r="0.4" _fill="white" stroke-width="0.07" stroke="green" cx="0" cy="0" transform="translate(0,0)"></circle>
   <circle class="selection-handle" data-handle="b" id="b-handle" r="0.4" _fill="white" stroke-width="0.07" stroke="green" cx="0" cy="0" transform="translate(0,0)" data-is-dragging="false"></circle>`;
-
-// const domPoint = (x, y, clamp = false) => {
-//   const p = new DOMPoint(x, y).matrixTransform(
-//     scene.getScreenCTM().inverse()
-//   );
-
-//   return !clamp ? p : {
-//     x: clamp === 'floor' ? Math.floor(p.x) : Math.ceil(p.x),
-//     y: clamp === 'floor' ? Math.floor(p.y) : Math.ceil(p.y)
-//   };
-// }
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
@@ -112,10 +86,8 @@ export class TileSelector extends EventEmitter {
   #handles = getHandles();
   #points = getPoints();
   
-  constructor(svgContext, options = SELECTOR_DEFAULTS) {
+  constructor(svgContext) {
     super();
-    // const { handles, points, unitSize } = options;
-    
     this.svgContext = svgContext
     this.#self = document.createElementNS(SVG_NS, 'g');
     this.#self.classList.add('tile-selector');
@@ -169,6 +141,7 @@ export class TileSelector extends EventEmitter {
   };
   
   get parent() { return this.#self.parentElement };
+  get dom() { return this.#self };
   
   get selectBox() { return this.#self.querySelector('.selection-box') }
   
@@ -219,7 +192,7 @@ export class TileSelector extends EventEmitter {
     const isTargetHandle = this.#handles.isHandle(target);
     const isSelBox = this.selectBox === target;
     e.stopPropagation();
-    
+    console.warn('DRAG START')
     if (isTargetHandle) {
       this.dragMode = 'handle'
       
@@ -256,7 +229,6 @@ export class TileSelector extends EventEmitter {
     e.stopPropagation();
     
     if (this.dragMode === 'translation') {
-      // this.#points.translation = this.clampToBounds(this.#points.translation)
       this.#points.translation.x = pt.x - this.pointerStart.x
       this.#points.translation.y = pt.y - this.pointerStart.y
       
@@ -275,6 +247,7 @@ export class TileSelector extends EventEmitter {
   
   async onDragEnd(e) {
     const { target, currentTarget, clientX, clientY } = e;
+    console.warn('DRAG END')
     
     const focusPoint = this.#points.focus;
     const focusHandle = this.#handles.focus;
