@@ -126,11 +126,11 @@ export class TileSelector extends EventEmitter {
     });
     
     this.bounds = {
-      minX: null,
-      minY: null,
-      maxX: null,
-      maxY: null,
-    }
+      minX: -Infinity,
+      minY: -Infinity,
+      maxX: Infinity,
+      maxY: Infinity
+    };
     
     this.clampToBounds = clampPointWithBounds(this.bounds)
     this.render = this.#render.bind(this);
