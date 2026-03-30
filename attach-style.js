@@ -45,6 +45,13 @@ export const attachTileSelectorStyle = () => {
         filter: brightness(1.2) drop-shadow(0 0px 0.125px #000000AD);
       }
     }
+    
+    .line-outline {
+      fill: rgba(221, 255, 0, 0.21);
+      stroke: #FF0069;
+      stroke-width: 0.1;
+      
+    }
   `;
   
   document.head.appendChild(style);

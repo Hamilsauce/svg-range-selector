@@ -4,6 +4,7 @@
   margin: 0;
   z-index: 0;
   touch-action: none;
+  user-select: none;
 }
 
 html {
@@ -167,11 +168,11 @@ svg {
   }
 }
 
-.tile[data-focused=true] {
-  fill: #D644C4 !important;
-  stroke-width: 0.075;
-}
 
 .tile[data-selected=true] {
   fill: #E1E1E1 !important;
+}
+.tile[data-focused=true] {
+  fill: #D644C4 !important;
+  stroke-width: 0.075;
 }

@@ -162,22 +162,6 @@ const initScene = (svg = new SVGSVGElement, scene = new SVGPathElement()) => {
   surface.height.baseVal.value = 20;
 };
 
-// const getRange = ({ start, end }) => {
-//   const tileContainer = document.querySelector('#tile-container');
-//   let range = [];
-
-//   for (let x = start.x; x < end.x; x++) {
-//     for (let y = start.y; y < end.y; y++) {
-//       const tile = tileAt(x, y);
-
-//       tile.dataset.selected = true;
-
-//       range.push(tile);
-//     }
-//   }
-
-//   return range;
-// };
 const getRange = ({ points, start, end }) => {
   const tileContainer = document.querySelector('#tile-container');
   let range = [];
@@ -222,9 +206,9 @@ const handleTileClick = (e) => {
   
   const tile = getTileAtScenePoint(e);
   
-  // if (activePanel && currentPanel && currentPanel instanceof DetailPanel) {
-  //   activePanel.remove();
-  // }
+  if (activePanel && currentPanel && currentPanel instanceof DetailPanel) {
+    activePanel.remove();
+  }
   
   if (tile && tile.dataset.focused === 'true') {
     tile.dataset.focused = false;
@@ -234,7 +218,7 @@ const handleTileClick = (e) => {
     currFocused.forEach((t, i) => {
       t.dataset.focused = false;
     });
-    
+    console.warn('handle click', { x: +tile.dataset.x, y: +tile.dataset.y })
     tile.dataset.focused = true;
     selectionBox.insertAt({ x: +tile.dataset.x, y: +tile.dataset.y });
   }
@@ -242,19 +226,19 @@ const handleTileClick = (e) => {
 
 const handleContextMenu = (e) => {
   const currFocused = [...document.querySelectorAll('rect[data-focused="true"]')][0];
-  // const activePanel = document.querySelector('.panel');
+  const activePanel = document.querySelector('.panel');
   
   const tile = getTileAtScenePoint(e);
   
-  // if (activePanel && currentPanel && currentPanel instanceof DetailPanel) {
-  //   activePanel.remove();
-  // }
+  if (activePanel && currentPanel && currentPanel instanceof DetailPanel) {
+    activePanel.remove();
+  }
   
-  // else if (tile) {
-  //   currentPanel = new DetailPanel(currFocused);
-  
-  //   currentPanel.appendTo(scene);
-  // }
+  else if (tile) {
+    currentPanel = new DetailPanel(currFocused);
+    
+    currentPanel.appendTo(scene);
+  }
 };
 
 const canvas = document.querySelector('#svg');
@@ -267,17 +251,14 @@ const viewBox = canvas.viewBox;
 const selectionBox = new TileSelector(scene);
 
 selectionBox.on('selection', ({ type, points, ...range }) => {
-  
-  
+  if (type == 'line') {
+    
+  }
   const tileRange = getRange({ points, ...range });
-  
-  const currFocused = [...document.querySelectorAll('rect[data-focused="true"]')];
-  
-  currFocused.forEach((t, i) => {
-    t.dataset.focused = false;
-  });
-  
-  // tileRange[0].dataset.focused = true;
+  // navigator.clipboard.writeText(
+  //   JSON.stringify(points, null, 2)
+  // )
+  // console.warn('tileRange',tileRange)
   
   State.selection = tileRange
 });
@@ -336,7 +317,7 @@ canvas.addEventListener('click', (e = new PointerEvent('pointerdown')) => {
 });
 
 canvas.addEventListener('pointerdown', (e = new PointerEvent('pointerdown')) => {
-  selectionBox.insertAt({ x: +e.target.dataset.x, y: +e.target.dataset.y });
+  // selectionBox.insertAt({ x: +e.target.dataset.x, y: +e.target.dataset.y });
   // dispatchPointerEvent(selectionBox.dom, 'pointerdown', { clientX: e.clientX, clientY: e.clientY })
   
   // if (!State.isSelecting) {
