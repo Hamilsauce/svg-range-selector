@@ -255,9 +255,7 @@ selectionBox.on('selection', ({ type, points, ...range }) => {
     
   }
   const tileRange = getRange({ points, ...range });
-  // navigator.clipboard.writeText(
-  //   JSON.stringify(points, null, 2)
-  // )
+  // navigator.clipboard.writeText(JSON.stringify(points, null, 2) )
   // console.warn('tileRange',tileRange)
   
   State.selection = tileRange

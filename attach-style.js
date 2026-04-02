@@ -46,11 +46,25 @@ export const attachTileSelectorStyle = () => {
       }
     }
     
+    #tile-selector[data-mode=box] {
+      .line-outline {
+        display: none;
+      }
+    }
+
+    #tile-selector[data-mode=line] {
+      .selection-box {
+        display: none;
+      }
+    }
+
     .line-outline {
-      fill: rgba(221, 255, 0, 0.21);
-      stroke: #FF0069;
-      stroke-width: 0.1;
-      
+      fill: #FFFFFF36 !important;
+      stroke: #38A658;
+      stroke-width: 0.1px;
+
+      stroke: green;
+      filter: brightness(1.2) drop-shadow(0 0px 0.075px #0000007A);
     }
   `;
   

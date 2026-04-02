@@ -46,8 +46,14 @@
   }
 
 .line-outline {
-  fill: rgba(221, 255, 0, 0.21);
+  fill: rgba(221, 255, 0, 1);
   stroke: #FF0069;
+  stroke-width: 0.05;
+}
+
+.line-outline {
+  fill: rgba(255, 0, 255, 0.1);
+  stroke: magenta;
   stroke-width: 0.05;
 }
 
