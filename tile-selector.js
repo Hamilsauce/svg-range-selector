@@ -90,6 +90,7 @@ export class TileSelector extends EventEmitter {
   #self;
   #handles = getHandles();
   #points = getPoints();
+  #renderOffset = new DOMPoint(0.5, 0.5);
   
   constructor(svgContext) {
     super();
@@ -166,6 +167,7 @@ export class TileSelector extends EventEmitter {
   
   set mode(v) { return this.#self.dataset.mode = v; }
   get linePath() { return this.#self.querySelector('.line-outline') }
+  get renderOffset() { return this.#renderOffset; }
   
   get linePoints() {
     if (this.mode !== 'line') return null;
@@ -174,6 +176,13 @@ export class TileSelector extends EventEmitter {
   
   setBounds(bounds = { minX: null, minY: null, maxX: null, maxY: null }) {
     Object.assign(this.bounds, bounds);
+    return this;
+  }
+
+  setOffset(offset = { x: 0.5, y: 0.5 }) {
+    this.#renderOffset.x = offset.x ?? this.#renderOffset.x;
+    this.#renderOffset.y = offset.y ?? this.#renderOffset.y;
+    this.render();
     return this;
   }
   
@@ -192,8 +201,8 @@ export class TileSelector extends EventEmitter {
     const p = this.domPoint(x, y);
 
     return {
-      x: Math.round(p.x),
-      y: Math.round(p.y),
+      x: Math.round(p.x - this.#renderOffset.x),
+      y: Math.round(p.y - this.#renderOffset.y),
     };
   }
   
@@ -345,11 +354,11 @@ export class TileSelector extends EventEmitter {
     if (this.dragMode === 'translation') {
       const x = this.#points.translation.x;
       const y = this.#points.translation.y;
-      this.#self.setAttribute('transform', `translate(${x},${y})`);
+      this.#self.setAttribute('transform', `translate(${this.#renderOffset.x + x},${this.#renderOffset.y + y})`);
       return;
     }
     else {
-      this.#self.setAttribute('transform', 'translate(0,0)');
+      this.#self.setAttribute('transform', `translate(${this.#renderOffset.x},${this.#renderOffset.y})`);
     }
     
     this.selectBox.setAttribute('x', this.#points.left);
