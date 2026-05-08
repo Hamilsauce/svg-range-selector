@@ -194,8 +194,8 @@ const getRange = ({ points, start, end }) => {
     return range
   }
   
-  for (let x = start.x; x < end.x; x++) {
-    for (let y = start.y; y < end.y; y++) {
+  for (let x = start.x; x <= end.x; x++) {
+    for (let y = start.y; y <= end.y; y++) {
       const tile = tileAt(x, y);
       
       tile.dataset.selected = true;

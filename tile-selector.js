@@ -1,11 +1,11 @@
 import { EventEmitter } from 'https://hamilsauce.github.io/hamhelper/event-emitter.js';
 import { attachTileSelectorStyle } from './attach-style.js';
-import { supercover_line, linePoints, outlineFromPoints, edgesToPath } from './lib/geometry-utils.js';
+import { linePoints, outlineFromPoints, edgesToPath } from './lib/geometry-utils.js';
 const SELECTOR_TEMPLATE = `
-  <rect class="selection-box" stroke-width="0.1" _stroke="green" width="1" height="1" x="2" y="2" transform="translate(-0.5,-0.5)"></rect>
-  <path class="line-outline" transform="translate(-0.5,-0.5)" />
-  <circle class="selection-handle" data-handle="a" id="a-handle" r="0.4" _fill="white" stroke-width="0.07" stroke="green" cx="0" cy="0" transform="translate(-0.0,-0.0)"></circle>
-  <circle class="selection-handle" data-handle="b" id="b-handle" r="0.4" _fill="white" stroke-width="0.07" stroke="green" cx="0" cy="0" transform="translate(-0.0,-0.0)" data-is-dragging="false"></circle>`;
+  <rect class="selection-box" stroke-width="0.1" _stroke="green" width="1" height="1" x="-0.5" y="-0.5"></rect>
+  <path class="line-outline" />
+  <circle class="selection-handle" data-handle="a" id="a-handle" r="0.4" _fill="white" stroke-width="0.07" stroke="green" cx="0" cy="0"></circle>
+  <circle class="selection-handle" data-handle="b" id="b-handle" r="0.4" _fill="white" stroke-width="0.07" stroke="green" cx="0" cy="0" data-is-dragging="false"></circle>`;
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
@@ -14,7 +14,9 @@ const clampPoint = (pt, bounds, upperTrim = 1) => ({
   y: clamp(pt.y, bounds.minY, bounds.maxY - upperTrim),
 });
 
-const clampPointWithBounds = (bounds) => (pt, upperTrim = 0) => clampPoint(pt, bounds, upperTrim)
+const clampPointWithBounds = (bounds) => (pt, upperTrim = 1) => clampPoint(pt, bounds, upperTrim)
+
+const offsetPoint = ({ x, y }, delta) => ({ x: x + delta, y: y + delta });
 
 const ROLES = ['a', 'b']
 
@@ -60,10 +62,12 @@ const getPoints = () => ({
   
   get x() { return Math.min(this.anchor?.x, this.focus?.x); },
   get y() { return Math.min(this.anchor?.y, this.focus?.y); },
-  get x2() { return (Math.max(this.anchor?.x, this.focus?.x)) <= 0 ? 0 : (Math.max(this.anchor.x, this.focus.x)) + 0 },
-  get y2() { return (Math.max(this.anchor?.y, this.focus?.y)) <= 0 ? 0 : (Math.max(this.anchor.y, this.focus.y)) + 0 },
-  get width() { return Math.max((this.x2 - this.x), 1) },
-  get height() { return Math.max((this.y2 - this.y), 1) },
+  get y2() { return Math.max(this.anchor?.y, this.focus?.y); },
+  get x2() { return Math.max(this.anchor?.x, this.focus?.x); },
+  get width() { return Math.abs(this.x2 - this.x) + 1; },
+  get height() { return Math.abs(this.y2 - this.y) + 1; },
+  get left() { return this.x - 0.5; },
+  get top() { return this.y - 0.5; },
   
   setFocus(label) {
     const anchorLabel = this.pointKeys.find(_ => _ !== label)
@@ -94,9 +98,7 @@ export class TileSelector extends EventEmitter {
     this.#self.classList.add('tile-selector');
     this.#self.id = 'tile-selector';
     this.mode = 'box';
-    
-    this.#self.setAttribute('transform', 'translate(-1,-1)');
-    
+
     this.#self.innerHTML = SELECTOR_TEMPLATE;
     
     this.#handles.a = this.#self.querySelector('[data-handle="a"]');
@@ -185,6 +187,15 @@ export class TileSelector extends EventEmitter {
       y: clamp === 'floor' ? Math.floor(p.y) : Math.ceil(p.y)
     };
   }
+
+  gridPoint(x, y) {
+    const p = this.domPoint(x, y);
+
+    return {
+      x: Math.round(p.x),
+      y: Math.round(p.y),
+    };
+  }
   
   remove() {
     if (this.isRendered) { this.#self.remove(); }
@@ -239,17 +250,20 @@ export class TileSelector extends EventEmitter {
   }
   
   onDragHandle(e) {
-    const { target, currentTarget, clientX, clientY } = e;
+    const { clientX, clientY } = e;
     
     const focusPoint = this.#points.focus;
-    const isSelBox = this.selectBox === target
-    const pt = this.domPoint(clientX, clientY) //, 'floor');
+    const rawPoint = this.domPoint(clientX, clientY);
+    const pt = {
+      x: Math.round(rawPoint.x),
+      y: Math.round(rawPoint.y),
+    };
     
     e.stopPropagation();
     
     if (this.dragMode === 'translation') {
-      this.#points.translation.x = pt.x - this.pointerStart.x
-      this.#points.translation.y = pt.y - this.pointerStart.y
+      this.#points.translation.x = rawPoint.x - this.pointerStart.x
+      this.#points.translation.y = rawPoint.y - this.pointerStart.y
       
       this.render();
       return
@@ -258,21 +272,21 @@ export class TileSelector extends EventEmitter {
     if (!focusPoint) return;
     const clamped = this.clampToBounds(pt)
     
-    focusPoint.x = this.mode === 'line' ? clamped.x : pt.x;
-    focusPoint.y = this.mode === 'line' ? clamped.y : pt.y;
+    focusPoint.x = clamped.x;
+    focusPoint.y = clamped.y;
     
     this.render();
   };
   
   async onDragEnd(e) {
-    const { target, currentTarget, clientX, clientY } = e;
+    const { clientX, clientY } = e;
     
     const focusPoint = this.#points.focus;
     const focusHandle = this.#handles.focus;
     
     if (this.dragMode === 'translation') {
-      const dx = Math.floor(this.#points.translation.x);
-      const dy = Math.floor(this.#points.translation.y);
+      const dx = Math.round(this.#points.translation.x);
+      const dy = Math.round(this.#points.translation.y);
       
       const aPoint = this.clampToBounds({
         x: this.#points.a.x + dx,
@@ -294,14 +308,14 @@ export class TileSelector extends EventEmitter {
       this.pointerStart = null;
       this.dragMode = 'handle';
     } else {
-      const pt = this.domPoint(clientX, clientY, 'floor');
+      const pt = this.gridPoint(clientX, clientY);
       
       if (!focusHandle || !focusPoint) return;
       
       const clamped = this.clampToBounds(pt)
       
-      focusPoint.x = pt.x //clamped.x;
-      focusPoint.y = pt.y //clamped.y;
+      focusPoint.x = clamped.x;
+      focusPoint.y = clamped.y;
     }
     
     this.#handles.setFocus(null);
@@ -321,10 +335,7 @@ export class TileSelector extends EventEmitter {
     }
     
     if (this.mode === 'line') {
-      const a = { x: this.#points.anchor.x, y: this.#points.anchor.y }
-      const b = { x: this.#points.focus.x, y: this.#points.focus.y }
-      const points = linePoints(a, b);
-      const edges = outlineFromPoints(this.linePoints);
+      const edges = outlineFromPoints(this.linePoints.map((point) => offsetPoint(point, -0.5)));
       const d = edgesToPath(edges);
       this.linePath.setAttribute('d', d);
     } else {
@@ -334,29 +345,24 @@ export class TileSelector extends EventEmitter {
     if (this.dragMode === 'translation') {
       const x = this.#points.translation.x;
       const y = this.#points.translation.y;
-      this.#self.setAttribute('transform', `translate(${x+0.5},${y+0.5})`);
+      this.#self.setAttribute('transform', `translate(${x},${y})`);
       return;
     }
     else {
-      this.#self.setAttribute('transform', `translate(${0.5},${0.5})`);
+      this.#self.setAttribute('transform', 'translate(0,0)');
     }
     
-    this.selectBox.setAttribute('x', this.#points.x);
-    this.selectBox.setAttribute('y', this.#points.y);
+    this.selectBox.setAttribute('x', this.#points.left);
+    this.selectBox.setAttribute('y', this.#points.top);
     
     this.selectBox.setAttribute('width', this.#points.width);
     this.selectBox.setAttribute('height', this.#points.height);
     
     if (this.#handles.focus) {
-      const pt = this.domPoint(this.#points.focus.x, this.#points.focus.y, );
-      
       this.#handles.focus.setAttribute('cx', this.#points.focus.x);
       this.#handles.focus.setAttribute('cy', this.#points.focus.y);
     }
     else {
-      const a = this.domPoint(this.#points.a.x, this.#points.a.y, ) // 'floor');
-      const b = this.domPoint(this.#points.b.x, this.#points.b.y, ) // 'floor');
-      
       this.#handles.a.setAttribute('cx', this.#points.a.x);
       this.#handles.a.setAttribute('cy', this.#points.a.y);
       this.#handles.b.setAttribute('cx', this.#points.b.x);
